@@ -64,32 +64,43 @@ var tree = d3.tree()
 
 function chart(data, width) {
 
-    const root = tree(data);
+
     d3.select('#chart').select("svg").remove();
     var svg = d3.select('#chart').append("svg");
+    const gNode = svg.append("g")
+        .attr("cursor", "pointer")
+        .attr("pointer-events", "all");
 
-    root.descendants().forEach((d, i) => {
+    data.descendants().forEach((d, i) => {
         d.id = i;
         d._children = d.children;
-        if (d.depth && d.data.data.name.length !== 7) d.children = null;
+        // if (d.depth && d.data.data.name.length !== 7) d.children = null;
     });
 
     function chart_update(root) {
-        svg.append("g")
+        const nodes = root.descendants().reverse();
+        const links = root.links();
+        tree(data);
+        const node = gNode.selectAll("g")
+            .data(nodes,
+                d =>
+                d.id);
+        const nodeEnter = node.enter()
+            .append("g")
             .attr("fill", "none")
             .attr("stroke", "#555")
             .attr("stroke-opacity", 0.4)
             .attr("stroke-width", 1.5)
             .selectAll("path")
-            .data(root.links())
+            .data(data.links())
             .join("path")
             .attr("d", d3.linkRadial()
                 .angle(d => d.x)
                 .radius(d => d.y));
 
-        svg.append("g")
+        nodeEnter.append("g")
             .selectAll("circle")
-            .data(root.descendants())
+            .data(data.descendants())
             .join("circle")
             .attr("transform", d => `
             rotate(${d.x * 180 / Math.PI - 90})
@@ -102,13 +113,13 @@ function chart(data, width) {
                 chart_update(d);
             });;
 
-        svg.append("g")
+        nodeEnter.append("g")
             .attr("font-family", "sans-serif")
             .attr("font-size", 10)
             .attr("stroke-linejoin", "round")
             .attr("stroke-width", 3)
             .selectAll("text")
-            .data(root.descendants())
+            .data(data.descendants())
             .join("text")
             .attr("transform", d => `
             rotate(${d.x * 180 / Math.PI - 90}) 
@@ -122,26 +133,29 @@ function chart(data, width) {
                 d.data.data.name)
             .clone(true).lower()
             .attr("stroke", "white");
-    }
-    chart_update(root)
 
-    svg.selectAll("text").on("click", function(d) {
-            if (window.curr_selection != undefined) {
-                window.curr_selection.attr('class', 'black_text')
-            }
-            txt = d3.select(this)
-            txt.attr('class', "red_text")
-            the_id = d.data.data.id
-            test = `#${the_id}`
-            window.curr_selection = txt
-            console.log("hello " + d.data.data.name);
-        })
-        // .onclick("click();");
-        // d3.select("body").style("background-color", "black");
-    _width2 = width * 2 + 90
-    _width1 = (width + 40)
-    const viewbox = `-${_width1} -${_width1} ${_width2} ${_width2}`
-    svg.attr("viewBox", viewbox)
+        nodeEnter.selectAll("text").on("click", function(d) {
+                if (window.curr_selection != undefined) {
+                    window.curr_selection.attr('class', 'black_text')
+                }
+                txt = d3.select(this)
+                txt.attr('class', "red_text")
+                the_id = d.data.data.id
+                test = `#${the_id}`
+                window.curr_selection = txt
+                console.log("hello " + d.data.data.name);
+            })
+            // .onclick("click();");
+            // d3.select("body").style("background-color", "black");
+        nodeExit = node.exit().remove();
+        _width2 = width * 2 + 90
+        _width1 = (width + 40)
+        const viewbox = `-${_width1} -${_width1} ${_width2} ${_width2}`
+        svg.attr("viewBox", viewbox)
+    }
+    chart_update(data)
+
+
 }
 // chart(data);
 curr_selection = $('#id_1')
